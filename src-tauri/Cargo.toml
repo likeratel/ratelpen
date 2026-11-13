@@ -1,0 +1,47 @@
+[package]
+name = "ratelpen"
+version = "0.1.0"
+description = "Draw on top of your screen while presenting, sharing or recording"
+license = "MIT"
+repository = "https://github.com/likeratel/ratelpen"
+edition = "2021"
+rust-version = "1.95"
+
+[lib]
+# The `_lib` suffix keeps the library name distinct from the binary name,
+# which avoids a Windows linker collision (rust-lang/cargo#8519).
+name = "ratelpen_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "macos-private-api"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-log = "2"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+log = "0.4"
+tempfile = "3"
+xcap = "0.9"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "libc", "NSApplication", "NSResponder", "NSRunningApplication", "NSWindow", "NSWorkspace"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+# Keep symbol names (not debug info) so macOS crash reports show function names.
+strip = "debuginfo"

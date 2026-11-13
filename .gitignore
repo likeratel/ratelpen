@@ -1,0 +1,30 @@
+# Logs
+logs
+*.log
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Rust build output
+src-tauri/target
+src-tauri/gen
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Local credentials and test output
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+artifacts/
+
+# Local agent orchestration state
+.omx/
+.omc/

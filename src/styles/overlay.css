@@ -1,0 +1,250 @@
+/* Overlay view: a fully transparent window that only shows ink and chrome. */
+
+:root[data-view="overlay"],
+:root[data-view="overlay"] body,
+:root[data-view="overlay"] #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.overlay {
+  --accent: #0a84ff;
+  --focus-ring: #64d2ff;
+  --chrome-bg: rgba(28, 28, 30, 0.86);
+  --chrome-fg: #f2f2f7;
+  --chrome-border: rgba(255, 255, 255, 0.2);
+  --chrome-hover: rgba(255, 255, 255, 0.14);
+  --spotlight-dim: rgba(0, 0, 0, 0.62);
+  position: fixed;
+  inset: 0;
+}
+
+.overlay.is-passive,
+.overlay.is-passive * {
+  pointer-events: none;
+}
+
+.board,
+.ink-layer,
+.spotlight-focus {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.board-white {
+  background: #ffffff;
+}
+
+.board-black {
+  background: #111113;
+}
+
+.overlay.is-active .input-layer {
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.overlay.is-active .input-layer.tool-pen,
+.overlay.is-active .input-layer.tool-highlighter,
+.overlay.is-active .input-layer.tool-line,
+.overlay.is-active .input-layer.tool-arrow,
+.overlay.is-active .input-layer.tool-rect,
+.overlay.is-active .input-layer.tool-ellipse {
+  cursor: crosshair;
+}
+
+.overlay.is-active .input-layer.tool-text {
+  cursor: text;
+}
+
+.overlay.is-active .input-layer.tool-eraser {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Ccircle cx='13' cy='13' r='12' fill='rgba(255,255,255,0.25)' stroke='black' stroke-width='1.5'/%3E%3Ccircle cx='13' cy='13' r='10.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E")
+      13 13,
+    cell;
+}
+
+/* Space held: the pointer picks and moves shapes instead of drawing. */
+.overlay.is-active .input-layer.is-selecting {
+  cursor: default;
+}
+
+.spotlight-halo {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(255, 214, 10, 0.22);
+  box-shadow:
+    0 0 0 2px rgba(255, 214, 10, 0.6),
+    0 0 24px rgba(255, 214, 10, 0.35);
+  pointer-events: none;
+}
+
+/* Toolbar: compact dark pill, readable on white, black and the boards. */
+.toolbar {
+  position: fixed;
+  /* Centred with auto margins: `left: 50%` would halve the width available
+     before the buttons wrap. */
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  width: max-content;
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 16px);
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 22px;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.toolbar.is-passive,
+.toolbar.is-passive * {
+  pointer-events: none;
+}
+
+.toolbar.is-hidden {
+  visibility: hidden;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tb-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--chrome-border);
+}
+
+.tb-grip {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 30px;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: grab;
+  touch-action: none;
+}
+
+.tb-grip:active {
+  cursor: grabbing;
+}
+
+.tb-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tb-button:hover:not(:disabled) {
+  background: var(--chrome-hover);
+}
+
+.tb-button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.tb-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tb-swatch {
+  width: 20px;
+  height: 20px;
+  margin: 0 1px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.tb-swatch[aria-pressed="true"] {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.tb-width {
+  min-width: 22px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.toolbar :focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.text-editor {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 1px dashed currentColor;
+  outline-offset: 4px;
+  background: transparent;
+  overflow: hidden;
+  white-space: pre;
+  resize: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.text-editor::placeholder {
+  color: currentColor;
+  opacity: 0.45;
+}
+
+.toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(28, 28, 30, 0.94);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.toast-error {
+  background: rgba(150, 28, 24, 0.96);
+}

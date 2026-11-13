@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>ratelpen tray</title>
+  <path d="M120 800 C 260 620, 400 900, 540 720 S 780 640, 900 760" fill="none" stroke="#000" stroke-width="90" stroke-linecap="round"/>
+  <g transform="rotate(40 600 330)">
+    <rect x="540" y="60" width="120" height="400" rx="24" fill="#000"/>
+    <path d="M540 490 L660 490 L600 620 Z" fill="#000"/>
+  </g>
+</svg>

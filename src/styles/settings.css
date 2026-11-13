@@ -1,0 +1,245 @@
+/* Settings view: a normal window following the system light/dark theme. */
+
+:root[data-view="settings"] {
+  color-scheme: light dark;
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --fg: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0a66d6;
+  --accent-fg: #ffffff;
+  --error: #c4251c;
+  --success: #1d7f3a;
+  --focus-ring: #0a84ff;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-view="settings"] {
+    --bg: #1c1c1e;
+    --surface: #2c2c2e;
+    --fg: #f2f2f7;
+    --muted: #a1a1a6;
+    --border: #48484a;
+    --accent: #0a84ff;
+    --error: #ff6961;
+    --success: #4cd27a;
+    --focus-ring: #64d2ff;
+  }
+}
+
+.settings {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 0;
+}
+
+.settings h1 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.settings-section h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.section-hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field,
+.shortcut-field,
+.color-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 10px 0;
+}
+
+.field-error {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--error);
+  font-size: 13px;
+}
+
+.shortcut-input {
+  display: flex;
+  gap: 6px;
+}
+
+.shortcut-input input {
+  width: 200px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  cursor: pointer;
+}
+
+.shortcut-input input:focus {
+  border-color: var(--accent);
+}
+
+.settings input[type="number"],
+.settings input:not([type]),
+.settings select {
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.settings input[type="number"] {
+  width: 90px;
+}
+
+.settings input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.settings input[type="color"] {
+  width: 44px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.palette-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 0;
+  border: 0;
+}
+
+.palette-field legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.color-field.compact {
+  display: block;
+  margin: 0;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.key-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.key-table th,
+.key-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.key-table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.key-table kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.settings-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 16px;
+  background: var(--bg);
+}
+
+.save-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--muted);
+}
+
+.save-status.is-error {
+  color: var(--error);
+}
+
+.save-status.is-success {
+  color: var(--success);
+}
+
+.primary-button {
+  min-width: 88px;
+  min-height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.settings :focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
