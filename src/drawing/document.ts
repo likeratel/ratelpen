@@ -56,6 +56,28 @@ export function moveShapes(
   );
 }
 
+function sameText(a: Shape, b: Shape): boolean {
+  return a.kind === "text" && b.kind === "text" && a.text === b.text;
+}
+
+/**
+ * Swaps in an edited version of a shape (same id), as one undo step. When the
+ * original is gone (fading ink ran out while it was being edited) the edit is
+ * kept as a new shape rather than lost.
+ */
+export function replaceShape(
+  doc: DrawingDocument,
+  shape: Shape,
+): DrawingDocument {
+  const current = doc.shapes.find((existing) => existing.id === shape.id);
+  if (!current) return addShape(doc, shape);
+  if (sameText(current, shape)) return doc;
+  return commit(
+    doc,
+    doc.shapes.map((existing) => (existing.id === shape.id ? shape : existing)),
+  );
+}
+
 export function clearDocument(doc: DrawingDocument): DrawingDocument {
   if (doc.shapes.length === 0) return doc;
   return commit(doc, []);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Tool } from "../bridge";
 import { draftToShape, type Draft } from "../drawing/draft";
 import { expiredIds, hasFadingShapes } from "../drawing/fade";
@@ -10,7 +10,7 @@ import {
   paintShapes,
 } from "../drawing/render";
 import { shapeBounds, translateShape } from "../drawing/selection";
-import type { InkStyle, Point, Shape } from "../drawing/types";
+import type { InkStyle, Point, Shape, TextShape } from "../drawing/types";
 import { prepareCanvas } from "./canvasSetup";
 import type { LivePreview } from "./pointerGestures";
 import { usePointerDrawing } from "./usePointerDrawing";
@@ -26,6 +26,8 @@ interface DrawingSurfaceProps {
   readonly active: boolean;
   readonly tool: Tool;
   readonly style: InkStyle;
+  /** Spotlight mode: the pointer only points, nothing is drawn or selected. */
+  readonly pointing: boolean;
   readonly selecting: boolean;
   readonly selection: ReadonlySet<string>;
   readonly onSelect: (ids: ReadonlySet<string>) => void;
@@ -34,6 +36,9 @@ interface DrawingSurfaceProps {
   readonly onErase: (ids: ReadonlySet<string>) => void;
   readonly onExpire: (ids: ReadonlySet<string>) => void;
   readonly onTextRequest: (point: Point) => void;
+  readonly onTextEdit: (shape: TextShape) => void;
+  /** The text open in the editor; it is not drawn while it is edited. */
+  readonly editingId: string | null;
   readonly onDrawingChange: (drawing: boolean) => void;
 }
 
@@ -45,7 +50,15 @@ export function DrawingSurface(props: DrawingSurfaceProps) {
   const { viewport, shapes, fadeMs, onExpire, selection } = props;
   const inkRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(NO_IDS);
+  const [gestureHidden, setHidden] = useState<ReadonlySet<string>>(NO_IDS);
+  const { editingId } = props;
+  const hidden = useMemo(
+    () =>
+      editingId === null
+        ? gestureHidden
+        : new Set([...gestureHidden, editingId]),
+    [gestureHidden, editingId],
+  );
 
   const paintInk = useCallback(
     (now: number) => {
@@ -78,7 +91,7 @@ export function DrawingSurface(props: DrawingSurfaceProps) {
   useFadeLoop(shapes, fadeMs, paintInk, onExpire);
 
   usePointerDrawing(liveRef, {
-    active: props.active,
+    active: props.active && !props.pointing,
     tool: props.tool,
     style: props.style,
     shapes,
@@ -90,6 +103,7 @@ export function DrawingSurface(props: DrawingSurfaceProps) {
     onErase: props.onErase,
     onHide: setHidden,
     onTextRequest: props.onTextRequest,
+    onTextEdit: props.onTextEdit,
     onDrawingChange: props.onDrawingChange,
     paintLive,
   });
@@ -100,7 +114,7 @@ export function DrawingSurface(props: DrawingSurfaceProps) {
       <canvas
         ref={liveRef}
         className={`ink-layer input-layer tool-${props.tool}${
-          props.selecting ? " is-selecting" : ""
+          props.selecting || props.pointing ? " is-selecting" : ""
         }`}
         data-testid="input-canvas"
       />

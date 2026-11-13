@@ -126,3 +126,25 @@ describe("moving shapes in the document", () => {
     expect(moveShapes(doc, new Set(["nope"]), 5, 5)).toBe(doc);
   });
 });
+
+describe("editing text", () => {
+  it("finds the topmost text under the pointer and nothing else", async () => {
+    const { textAt } = await import("./selection");
+    const above: Shape = { ...label, id: "above" };
+    expect(textAt([label, above, box], { x: 740, y: 115 })?.id).toBe("above");
+    expect(textAt([label, box], { x: 300, y: 250 })).toBeNull();
+  });
+
+  it("replaces a text as one undo step and skips an unchanged one", async () => {
+    const { replaceShape } = await import("./document");
+    const doc = addShape(emptyDocument, label);
+    const edited: Shape = { ...label, text: "bye" };
+    const next = replaceShape(doc, edited);
+    expect(next.shapes).toEqual([edited]);
+    expect(undo(next).shapes).toEqual([label]);
+    expect(replaceShape(doc, { ...label })).toBe(doc);
+    // The original faded away during the edit: the edit is kept, not lost.
+    const orphan: Shape = { ...edited, id: "missing" };
+    expect(replaceShape(doc, orphan).shapes).toEqual([label, orphan]);
+  });
+});

@@ -15,6 +15,8 @@ export type DraftTool = (typeof DRAFT_TOOLS)[number];
 
 /** Points closer than this to the previous one add nothing visible. */
 export const MIN_POINT_DISTANCE = 0.5;
+/** A press that stays within this many CSS px is a tap, not a stroke. */
+export const TAP_SLOP = 6;
 /** Lines and boxes smaller than this are treated as accidental clicks. */
 export const MIN_SHAPE_SIZE = 2;
 
@@ -118,7 +120,15 @@ export function finishDraft(
   createdAt: number,
 ): Shape | null {
   const shape = draftToShape(draft, id, createdAt);
-  if (shape.kind === "freehand" || shape.kind === "text") return shape;
+  if (shape.kind === "text") return shape;
+  if (shape.kind === "freehand") {
+    // A tap is shown as a ring by the overlay and leaves no dot behind.
+    const start = shape.points[0];
+    const moved = shape.points.some(
+      (point) => distance(start, point) > TAP_SLOP,
+    );
+    return moved ? shape : null;
+  }
   const tooSmall =
     shape.kind === "line" || shape.kind === "arrow"
       ? distance(shape.from, shape.to) < MIN_SHAPE_SIZE

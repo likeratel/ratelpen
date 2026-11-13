@@ -26,10 +26,16 @@ describe("drafts", () => {
     expect(shape?.kind === "freehand" && shape.points).toHaveLength(2);
   });
 
-  it("keeps a single click with the pen as a dot", () => {
-    expect(
-      finishDraft(startDraft("pen", p(1, 1), style), "s", 0),
-    ).not.toBeNull();
+  it("a tap with the pen leaves no ink, a short stroke does", () => {
+    const tap = extendDraft(
+      startDraft("pen", p(1, 1), style),
+      [p(3, 2)],
+      false,
+    );
+    expect(finishDraft(tap, "s", 0)).toBeNull();
+    expect(finishDraft(startDraft("pen", p(1, 1), style), "s", 0)).toBeNull();
+    const stroke = extendDraft(tap, [p(12, 1)], false);
+    expect(finishDraft(stroke, "s", 0)).not.toBeNull();
   });
 
   it("drops lines and boxes that are too small", () => {

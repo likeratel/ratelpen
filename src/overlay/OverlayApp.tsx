@@ -19,10 +19,12 @@ import {
 } from "../shared/useToast";
 import { DrawingSurface } from "./DrawingSurface";
 import { BoardLayer, SpotlightLayer, Toast } from "./Layers";
+import { TapRipples } from "./TapRipples";
 import { TextEditor } from "./TextEditor";
 import { Toolbar } from "./Toolbar";
 import { useCapture } from "./useCapture";
 import { useDrawingDocument } from "./useDrawingDocument";
+import { useGlobalShortcutKeys } from "./useGlobalShortcutKeys";
 import { useInkInput } from "./useInkInput";
 import { useOverlayActions } from "./useOverlayActions";
 import { useOverlayKeyboard } from "./useOverlayKeyboard";
@@ -112,6 +114,10 @@ function useOverlayController(props: ReadyOverlayProps) {
   useReportContent(doc.shapes.length > 0, onReportError);
   useBridgeEvent(onCursor, setCursor);
   useBridgeEvent(onOverlayCommand, (command) => {
+    if (command.type === "lock-permission")
+      props.showToast(t("toast.lockPermission"), "error");
+    if (command.type === "lock-failed")
+      props.showToast(t("toast.lockFailed"), "error");
     if (command.type !== "clear") return;
     ink.text.cancel();
     actions.clear();
@@ -127,12 +133,20 @@ function useOverlayController(props: ReadyOverlayProps) {
   });
   // Space would type into the text box, so selecting waits until it closes.
   const selection = useSelection({
-    active: session.active && !ink.text.draft,
+    active: session.active && !session.spotlight && !ink.text.draft,
     shapes: doc.shapes,
     erase: actions.erase,
     dispatch,
   });
   useOverlayKeyboard(session.active, selection.onKeyAction);
+  useGlobalShortcutKeys(session.active, settings.shortcuts, props.platform, {
+    toggleDraw: () => props.patchSession({ active: false }),
+    clearAll: () => {
+      ink.text.cancel();
+      actions.clear();
+    },
+    toggleSpotlight: () => dispatch({ type: "toggleSpotlight" }),
+  });
 
   return {
     doc,
@@ -165,6 +179,7 @@ function ReadyOverlay(props: ReadyOverlayProps) {
         active={session.active}
         tool={session.tool}
         style={c.ink.style}
+        pointing={session.spotlight}
         selecting={c.selection.selecting}
         selection={c.selection.selection}
         onSelect={c.selection.select}
@@ -173,6 +188,8 @@ function ReadyOverlay(props: ReadyOverlayProps) {
         onErase={c.actions.erase}
         onExpire={c.actions.expire}
         onTextRequest={c.ink.onTextRequest}
+        onTextEdit={c.ink.onTextEdit}
+        editingId={text.draft?.editingId ?? null}
         onDrawingChange={c.setDrawing}
       />
       <SpotlightLayer
@@ -181,6 +198,7 @@ function ReadyOverlay(props: ReadyOverlayProps) {
         style={settings.spotlightStyle}
         radius={settings.spotlightRadius}
       />
+      <TapRipples enabled={session.active} color={session.color} />
       {session.active && text.draft && !c.capturing && (
         <TextEditor
           draft={text.draft}

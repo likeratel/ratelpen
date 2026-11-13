@@ -57,6 +57,13 @@ pub struct Settings {
     pub spotlight_radius: u32,
     pub clear_on_exit: bool,
     pub launch_at_login: bool,
+    /// Added after 0.1.0; a settings file without it keeps working.
+    #[serde(default = "enabled")]
+    pub lock_while_drawing: bool,
+}
+
+fn enabled() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -76,10 +83,11 @@ impl Default for Settings {
             default_width: DEFAULT_WIDTH,
             fade_seconds: DEFAULT_FADE_SECONDS,
             fade_by_default: false,
-            spotlight_style: SpotlightStyle::Halo,
+            spotlight_style: SpotlightStyle::Focus,
             spotlight_radius: DEFAULT_SPOTLIGHT_RADIUS,
             clear_on_exit: true,
             launch_at_login: false,
+            lock_while_drawing: true,
         }
     }
 }
@@ -170,13 +178,21 @@ mod tests {
     }
 
     #[test]
+    fn a_settings_file_from_before_the_lock_option_still_loads() {
+        let mut json = serde_json::to_value(Settings::default()).unwrap();
+        json.as_object_mut().unwrap().remove("lockWhileDrawing");
+        let settings: Settings = serde_json::from_value(json).unwrap();
+        assert!(settings.lock_while_drawing);
+    }
+
+    #[test]
     fn defaults_match_the_contract_and_are_valid() {
         let settings = Settings::default();
         assert!(settings.validate().is_ok());
         let json = serde_json::to_value(&settings).unwrap();
         assert_eq!(json["shortcuts"]["toggleDraw"], DEFAULT_TOGGLE_DRAW);
         assert_eq!(json["palette"][7], "#1c1c1e");
-        assert_eq!(json["spotlightStyle"], "halo");
+        assert_eq!(json["spotlightStyle"], "focus");
         assert_eq!(json["fadeSeconds"], 5);
         assert_eq!(json["spotlightRadius"], 60);
         assert_eq!(json["version"], 1);

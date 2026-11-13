@@ -48,6 +48,7 @@ interface Settings {           // persisted as settings.json in the app config d
   spotlightRadius: number;     // 20..=300, logical px
   clearOnExit: boolean;        // default true: clear every overlay when draw mode is turned off
   launchAtLogin: boolean;
+  lockWhileDrawing: boolean;   // default true; optional in a stored file (added after 0.1.0)
 }
 
 interface Bootstrap {
@@ -69,7 +70,7 @@ Error codes: `invalid_session`, `invalid_settings` (also malformed or duplicate 
 `capture_permission`, `capture_failed`, `window_failed`.
 
 Default palette: `#ff3b30 #ff9500 #ffd60a #34c759 #0a84ff #bf5af2 #ffffff #1c1c1e`.
-Default colour `#ff3b30`, width `4`, fade `5`s off, spotlight style `halo`, radius `60`.
+Default colour `#ff3b30`, width `4`, fade `5`s off, spotlight style `focus`, radius `60`.
 
 ## Commands (UI → core)
 
@@ -89,7 +90,7 @@ Default colour `#ff3b30`, width `4`, fade `5`s off, spotlight style `halo`, radi
 | --- | --- | --- |
 | `session-changed` | `Session` | all windows |
 | `settings-changed` | `Settings` | all windows |
-| `overlay-command` | `{ type: "clear" }` | all overlays (tray menu, global shortcut) |
+| `overlay-command` | `{ type: "clear" \| "lock-permission" \| "lock-failed" }` | all overlays. `clear`: tray menu, global shortcut. The lock types: see Interaction lock. |
 | `cursor` | `{ x: number, y: number } \| null` | each overlay, in that overlay's logical CSS pixels; `null` when the cursor is on another monitor. Sent at up to 60 Hz while `session.spotlight` is true; unchanged positions are skipped but re-sent every 0.5 s. |
 
 ## Keyboard (handled by the focused overlay while draw mode is on)
@@ -101,3 +102,38 @@ Holding `Space` turns the pointer into a selection tool: click selects a shape (
 dragging a shape moves the selection, dragging over empty space selects what the rectangle touches.
 With a selection, `D`, `Delete` and `Backspace` delete it and `Esc` drops it instead of leaving draw mode.
 Holding `Shift` while dragging constrains lines to 45° steps and rectangles/ellipses to squares/circles.
+
+Double-clicking a text while `Space` is held, or clicking it with the text tool, opens it for editing.
+While `session.spotlight` is on, the overlay draws nothing and shows no tool as selected; choosing a
+tool sends `{ tool, spotlight: false }`.
+
+## Kept in the web view's storage
+
+Not part of the IPC: the toolbar position (`ratelpen.toolbarPosition`) and the user's favourite
+colours (`ratelpen.favoriteColors`, at most 10 `#rrggbb` strings) and the colour last used with each
+tool (`ratelpen.toolColors`) live in `localStorage`. Once a tool has a remembered colour it wins over
+`settings.defaultColor`, which then only seeds tools that have never been used.
+
+## Interaction lock
+
+While draw mode is on and `settings.lockWhileDrawing` is true, the core holds the keyboard on macOS: an
+event tap takes key presses and trackpad gestures before the system does and hands the key presses to
+ratelpen only, so the app switcher, Mission Control and other apps' shortcuts do not fire. Media keys
+are not touched. The setting is read when draw mode is turned on; changing it while drawing applies the
+next time.
+
+Ways out that do not depend on the overlay's web view, all handled inside the tap:
+
+- the `toggleDraw` shortcut leaves draw mode (its key repeat is swallowed until the key is released, so
+  holding it cannot switch draw mode back on);
+- Force Quit (`Cmd+Option+Esc`) is let through and also leaves draw mode;
+- whenever ratelpen is not the active app, everything is let through.
+
+macOS allows the tap only after the user adds ratelpen under Privacy & Security › Accessibility. The
+first time ever, the core lets macOS show its dialog and leaves draw mode so the dialog can be clicked.
+After that, turning draw mode on without the permission works unlocked and the core sends
+`overlay-command { type: "lock-permission" }` once per launch (`"lock-failed"` when the tap cannot be
+created).
+
+The overlay recognises `clearAll` (clears this screen) and `toggleSpotlight` itself while it has the
+keyboard, and `toggleDraw` too when its key is one the tap does not know. Not implemented on Windows.

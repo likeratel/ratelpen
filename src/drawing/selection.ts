@@ -1,6 +1,6 @@
 import { arrowHeadLength, hitShape, normalizeRect, textBox } from "./geometry";
 import { paintedWidth } from "./style";
-import type { Point, Rect, Shape } from "./types";
+import type { Point, Rect, Shape, TextShape } from "./types";
 
 // Picking, bounding and moving shapes for the selection gestures. Pure.
 
@@ -144,4 +144,15 @@ export function toggleId(
   const next = new Set(ids);
   if (!next.delete(id)) next.add(id);
   return next;
+}
+
+/** The topmost text under `p`, for editing it in place. */
+export function textAt(shapes: readonly Shape[], p: Point): TextShape | null {
+  const texts = shapes.filter(
+    (shape): shape is TextShape => shape.kind === "text",
+  );
+  return (
+    [...texts].reverse().find((shape) => rectContains(shapeBounds(shape), p)) ??
+    null
+  );
 }

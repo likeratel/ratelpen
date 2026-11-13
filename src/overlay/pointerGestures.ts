@@ -6,12 +6,14 @@ import {
   type Draft,
 } from "../drawing/draft";
 import { hitAlongSegment, normalizePressure } from "../drawing/geometry";
+import { textAt } from "../drawing/selection";
 import type {
   InkStyle,
   Point,
   PressurePoint,
   Rect,
   Shape,
+  TextShape,
 } from "../drawing/types";
 import {
   extendSelect,
@@ -41,6 +43,8 @@ export interface GestureOptions {
   /** Shapes to leave out of the committed layer while a gesture shows them. */
   readonly onHide: (ids: ReadonlySet<string>) => void;
   readonly onTextRequest: (point: Point) => void;
+  /** Reopen an existing text for editing. */
+  readonly onTextEdit: (shape: TextShape) => void;
   readonly onDrawingChange: (drawing: boolean) => void;
   readonly paintLive: (preview: LivePreview | null) => void;
 }
@@ -145,7 +149,9 @@ export class PointerGestures {
     }
     if (opts.selection.size > 0) opts.onSelect(NO_SELECTION);
     if (opts.tool === "text") {
-      opts.onTextRequest(point);
+      const existing = textAt(opts.shapes, point);
+      if (existing) opts.onTextEdit(existing);
+      else opts.onTextRequest(point);
       return;
     }
     if (opts.tool !== "eraser" && !isDraftTool(opts.tool)) return;
@@ -186,6 +192,17 @@ export class PointerGestures {
     const next = eraseAlong(gesture, this.read().shapes, points);
     this.gesture = next;
     if (next.hits !== gesture.hits) this.read().onHide(next.hits);
+  };
+
+  /** Space + double-click on a text edits it, whatever the tool. */
+  readonly doubleClick = (event: MouseEvent): void => {
+    const opts = this.read();
+    if (!opts.active || !opts.selecting || this.gesture) return;
+    const existing = textAt(opts.shapes, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (existing) opts.onTextEdit(existing);
   };
 
   readonly up = (event: PointerEvent): void => this.end(event, true);

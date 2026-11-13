@@ -9,6 +9,8 @@ expected to stay inside that scope.
   content off the machine.
 - Drawings live in memory only. Captures are written only when the user asks, and only to the
   Pictures folder or the clipboard.
+- The keyboard lock exists only while draw mode is on. It hands key presses to ratelpen and does
+  nothing else with them: no logging, no storing, no sending. Force Quit must always get through.
 - The UI and the Rust core talk only through [CONTRACT.md](CONTRACT.md). When you change a command,
   an event, or a payload, update the contract, the Rust models, and the zod schemas together.
 - Validate every IPC input in the core and reject out-of-range values. Do not build shell command

@@ -9,6 +9,7 @@ import {
   moveShapes,
   redo,
   removeExpired,
+  replaceShape,
   undo,
   type DrawingDocument,
 } from "../drawing/document";
@@ -16,6 +17,7 @@ import type { Shape } from "../drawing/types";
 
 export interface DocumentActions {
   add: (shape: Shape) => void;
+  replace: (shape: Shape) => void;
   erase: (ids: ReadonlySet<string>) => void;
   move: (ids: ReadonlySet<string>, dx: number, dy: number) => void;
   expire: (ids: ReadonlySet<string>) => void;
@@ -40,6 +42,7 @@ export function useDrawingDocument(): {
   const actions = useMemo<DocumentActions>(
     () => ({
       add: (shape) => update((current) => addShape(current, shape)),
+      replace: (shape) => update((current) => replaceShape(current, shape)),
       erase: (ids) => update((current) => eraseShapes(current, ids)),
       move: (ids, dx, dy) =>
         update((current) => moveShapes(current, ids, dx, dy)),

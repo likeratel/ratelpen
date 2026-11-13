@@ -21,18 +21,27 @@ export function useInkInput(session: Session, actions: DocumentActions) {
 
   const addText = useCallback(
     (draft: TextDraft) => {
-      const shape = textShapeFromDraft(draft, nextShapeId(), performance.now());
-      if (shape) actions.add(shape);
+      const { editingId } = draft;
+      const id = editingId ?? nextShapeId();
+      const shape = textShapeFromDraft(draft, id, performance.now());
+      if (editingId === undefined) {
+        if (shape) actions.add(shape);
+        return;
+      }
+      // Edited text replaces the original; emptied text removes it.
+      if (shape) actions.replace(shape);
+      else actions.erase(new Set([editingId]));
     },
     [actions],
   );
   const text = useTextEntry(addText);
-  const { commit: commitText, open: openText } = text;
+  const { commit: commitText, open: openText, edit: onTextEdit } = text;
 
   // Leaving draw mode or the text tool keeps what was typed.
   useEffect(() => {
-    if (!session.active || session.tool !== "text") commitText();
-  }, [session.active, session.tool, commitText]);
+    if (!session.active || session.spotlight || session.tool !== "text")
+      commitText();
+  }, [session.active, session.spotlight, session.tool, commitText]);
 
   const onDraftEnd = useCallback(
     (draft: Draft) => {
@@ -47,5 +56,5 @@ export function useInkInput(session: Session, actions: DocumentActions) {
     [openText, style],
   );
 
-  return { style, text, onDraftEnd, onTextRequest };
+  return { style, text, onDraftEnd, onTextRequest, onTextEdit };
 }

@@ -172,6 +172,13 @@ export function GeneralSection({ draft, update }: SectionProps) {
         onChange={(clearOnExit) => update((d) => ({ ...d, clearOnExit }))}
       />
       <CheckboxField
+        label={t("settings.lockWhileDrawing")}
+        checked={draft.lockWhileDrawing}
+        onChange={(lockWhileDrawing) =>
+          update((d) => ({ ...d, lockWhileDrawing }))
+        }
+      />
+      <CheckboxField
         label={t("settings.launchAtLogin")}
         checked={draft.launchAtLogin}
         onChange={(launchAtLogin) => update((d) => ({ ...d, launchAtLogin }))}

@@ -9,11 +9,16 @@ export function sessionPatchFor(
 ): SessionPatch | null {
   switch (action.type) {
     case "tool":
-      return { tool: action.tool };
+      // Picking a tool leaves the spotlight, which is used without one.
+      return session.spotlight
+        ? { tool: action.tool, spotlight: false }
+        : { tool: action.tool };
     case "color": {
       const color = settings.palette[action.index];
       return color ? { color } : null;
     }
+    case "setColor":
+      return { color: action.color };
     case "width":
       return { width: stepWidth(session.width, action.direction) };
     case "toggleFade":

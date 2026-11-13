@@ -8,6 +8,7 @@ import {
   ImageDown,
   LogOut,
   Minus,
+  Palette,
   MoveUpRight,
   Pen,
   Plus,
@@ -22,10 +23,11 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { TOOLS, type Platform, type Session, type Tool } from "../bridge";
 import { t } from "../i18n";
 import { KEY_LABELS, commandShortcuts, type UiAction } from "./actions";
+import { ColorPicker } from "./ColorPicker";
 import { TOOL_SHORTCUT } from "./shortcuts";
 import {
   ICON_SIZE,
@@ -65,7 +67,8 @@ function Icon({ icon: Component }: { readonly icon: LucideIcon }) {
   return <Component size={ICON_SIZE} strokeWidth={ICON_STROKE} aria-hidden />;
 }
 
-function ToolButtons({ tool, onAction }: { tool: Tool; onAction: Dispatch }) {
+function ToolButtons(props: { tool: Tool | null; onAction: Dispatch }) {
+  const { tool, onAction } = props;
   return (
     <div className="tb-group" role="group">
       {TOOLS.map((item) => (
@@ -105,6 +108,56 @@ function PaletteButtons(props: {
           />
         );
       })}
+      <ColorPickerButton color={props.color} onAction={props.onAction} />
+    </div>
+  );
+}
+
+/** Space in px the picker needs above the toolbar before it opens below. */
+const PICKER_HEIGHT = 380;
+
+function ColorPickerButton(props: { color: string; onAction: Dispatch }) {
+  const [open, setOpen] = useState(false);
+  const [below, setBelow] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Starting to draw, or clicking anywhere else, puts the picker away.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && ref.current?.contains(event.target))
+        return;
+      setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open]);
+
+  const toggle = () => {
+    const top = ref.current?.getBoundingClientRect().top ?? PICKER_HEIGHT;
+    setBelow(top < PICKER_HEIGHT);
+    setOpen((current) => !current);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={`color-anchor ${below ? "opens-below" : "opens-above"}`}
+    >
+      <ToolbarButton
+        label={t("toolbar.moreColors")}
+        pressed={open}
+        onClick={toggle}
+      >
+        <Icon icon={Palette} />
+      </ToolbarButton>
+      {open && (
+        <ColorPicker
+          color={props.color}
+          onPick={(color) => props.onAction({ type: "setColor", color })}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -279,7 +332,10 @@ export function Toolbar(props: ToolbarProps) {
       >
         <Icon icon={GripVertical} />
       </span>
-      <ToolButtons tool={session.tool} onAction={onAction} />
+      <ToolButtons
+        tool={session.spotlight ? null : session.tool}
+        onAction={onAction}
+      />
       <ToolbarDivider />
       <PaletteButtons
         palette={props.palette}

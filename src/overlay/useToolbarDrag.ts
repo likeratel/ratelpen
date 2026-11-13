@@ -17,16 +17,42 @@ interface DragStart {
 
 type GripEvent = ReactPointerEvent<HTMLElement>;
 
+const STORAGE_KEY = "ratelpen.toolbarPosition";
+
+/** The saved position, or null when there is none or storage is unavailable. */
+function loadPosition(): Point | null {
+  try {
+    const parsed: unknown = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY) ?? "null",
+    );
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const { x, y } = parsed as { x?: unknown; y?: unknown };
+    return typeof x === "number" && typeof y === "number" ? { x, y } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Storage can be unavailable; the toolbar then just starts at its default place. */
+function savePosition(position: Point): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+  } catch {
+    // Nothing to do: the position still applies for as long as it is in memory.
+  }
+}
+
 function windowBounds() {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
 /**
  * Lets the toolbar be dragged by its grip. `null` keeps the default
- * bottom-centre placement; the position lives in memory only.
+ * bottom-centre placement. The position is remembered across draw mode and
+ * launches.
  */
 export function useToolbarDrag(toolbar: RefObject<HTMLElement | null>) {
-  const [position, setPosition] = useState<Point | null>(null);
+  const [position, setPosition] = useState<Point | null>(loadPosition);
   const drag = useRef<DragStart | null>(null);
 
   const clamped = useCallback(
@@ -39,6 +65,11 @@ export function useToolbarDrag(toolbar: RefObject<HTMLElement | null>) {
     },
     [toolbar],
   );
+
+  // A saved position may be off screen now (another display, new size).
+  useEffect(() => {
+    setPosition((current) => current && clamped(current));
+  }, [clamped]);
 
   useEffect(() => {
     const onResize = () =>
@@ -71,7 +102,10 @@ export function useToolbarDrag(toolbar: RefObject<HTMLElement | null>) {
   };
 
   const onPointerEnd = (event: GripEvent) => {
-    if (drag.current?.pointerId === event.pointerId) drag.current = null;
+    if (drag.current?.pointerId !== event.pointerId) return;
+    drag.current = null;
+    const rect = toolbar.current?.getBoundingClientRect();
+    if (rect) savePosition({ x: rect.left, y: rect.top });
   };
 
   return {

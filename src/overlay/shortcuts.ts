@@ -12,6 +12,7 @@ import {
 export type OverlayAction =
   | { type: "tool"; tool: Tool }
   | { type: "color"; index: number }
+  | { type: "setColor"; color: string }
   | { type: "width"; direction: -1 | 1 }
   | { type: "toggleFade" }
   | { type: "toggleSpotlight" }

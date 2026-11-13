@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { measureTextBlock } from "../drawing/render";
 import { fontSizeForWidth } from "../drawing/style";
-import type { InkStyle, Point, Shape } from "../drawing/types";
+import type { InkStyle, Point, Shape, TextShape } from "../drawing/types";
 import { getMeasureContext } from "./canvasSetup";
 import type { TextDraft } from "./TextEditor";
 
@@ -32,6 +32,7 @@ export function textShapeFromDraft(
 export function useTextEntry(onCommitShape: (draft: TextDraft) => void): {
   draft: TextDraft | null;
   open: (at: Point, style: InkStyle) => void;
+  edit: (shape: TextShape) => void;
   change: (value: string) => void;
   commit: () => void;
   cancel: () => void;
@@ -67,6 +68,25 @@ export function useTextEntry(onCommitShape: (draft: TextDraft) => void): {
     [commit, setDraft],
   );
 
+  const edit = useCallback(
+    (shape: TextShape) => {
+      if (latest.current) {
+        commit();
+        return;
+      }
+      setDraft({
+        at: shape.at,
+        value: shape.text,
+        color: shape.color,
+        width: shape.width,
+        fade: shape.fade,
+        fontSize: shape.fontSize,
+        editingId: shape.id,
+      });
+    },
+    [commit, setDraft],
+  );
+
   const change = useCallback(
     (value: string) => {
       const current = latest.current;
@@ -77,5 +97,5 @@ export function useTextEntry(onCommitShape: (draft: TextDraft) => void): {
 
   const cancel = useCallback(() => setDraft(null), [setDraft]);
 
-  return { draft, open, change, commit, cancel };
+  return { draft, open, edit, change, commit, cancel };
 }

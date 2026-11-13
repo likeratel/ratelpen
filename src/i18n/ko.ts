@@ -21,6 +21,16 @@ export const ko: Record<MessageKey, string> = {
   "toolbar.label": "그리기 도구",
   "toolbar.move": "도구 막대 이동",
   "toolbar.color": "색 {index}",
+  "toolbar.moreColors": "다른 색",
+  "color.picker": "색 선택",
+  "color.wheel": "색상환: 끌어서 색조와 채도 선택",
+  "color.brightness": "밝기",
+  "color.code": "색 코드(16진수 또는 RGB)",
+  "color.favorite": "자주 쓰는 색에 추가",
+  "color.unfavorite": "자주 쓰는 색에서 빼기",
+  "color.favorites": "자주 쓰는 색",
+  "color.noFavorites": "아직 없습니다. 별을 눌러 색을 저장하세요.",
+  "color.useFavorite": "{color} 사용",
   "toolbar.thinner": "가늘게",
   "toolbar.thicker": "굵게",
   "toolbar.width": "굵기 {width}",
@@ -40,6 +50,10 @@ export const ko: Record<MessageKey, string> = {
 
   "toast.saved": "사진 폴더의 ratelpen에 {path} 저장함",
   "toast.savedNoPath": "스크린숏을 저장함",
+  "toast.lockPermission":
+    "그리는 동안 앱 전환을 막으려면 시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 ratelpen을 허용한 뒤 그리기 모드를 다시 켜세요.",
+  "toast.lockFailed":
+    "키보드를 잠그지 못했습니다. 다른 앱의 단축키가 그대로 동작합니다.",
   "toast.copied": "클립보드에 복사됨",
   "error.capturePermission":
     "화면 기록 권한이 없습니다. 시스템 설정의 화면 기록에서 ratelpen을 허용한 뒤 다시 시도하세요.",
@@ -93,6 +107,8 @@ export const ko: Record<MessageKey, string> = {
 
   "settings.general": "일반",
   "settings.clearOnExit": "그리기 모드를 끝낼 때 그림 지우기",
+  "settings.lockWhileDrawing":
+    "그리는 동안 키보드 잠금: 앱 전환, Mission Control, 다른 단축키 막기 (macOS, 손쉬운 사용 권한 필요)",
   "settings.launchAtLogin": "로그인할 때 ratelpen 열기",
 
   "settings.keys": "그리기 단축키",

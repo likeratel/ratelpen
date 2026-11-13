@@ -39,12 +39,14 @@ export function usePointerDrawing(
     element.addEventListener("pointerup", gestures.up);
     element.addEventListener("pointercancel", gestures.cancel);
     element.addEventListener("lostpointercapture", onLostCapture);
+    element.addEventListener("dblclick", gestures.doubleClick);
     window.addEventListener("keydown", gestures.shiftChanged);
     window.addEventListener("keyup", gestures.shiftChanged);
     return () => {
       gestures.dispose();
       gesturesRef.current = null;
       element.removeEventListener("lostpointercapture", onLostCapture);
+      element.removeEventListener("dblclick", gestures.doubleClick);
       element.removeEventListener("pointerdown", gestures.begin);
       element.removeEventListener(moveEvent, gestures.move);
       element.removeEventListener("pointerup", gestures.up);

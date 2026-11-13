@@ -9,6 +9,18 @@ use std::future::Future;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
+
+use crate::platform::{LockConfig, LockOutcome};
+use crate::settings::ShortcutAction;
+use crate::shortcuts::ShortcutRegistry;
 use crate::{
     cursor::CursorTracker,
     error::{IpcError, IpcResult, INVALID_ARGUMENT, INVALID_SESSION},
@@ -26,6 +38,12 @@ pub const OVERLAY_COMMAND: &str = "overlay-command";
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum OverlayCommand {
     Clear,
+    /// The keyboard lock needs the Accessibility permission.
+    #[serde(rename = "lock-permission")]
+    LockPermission,
+    /// The keyboard lock could not be started.
+    #[serde(rename = "lock-failed")]
+    LockFailed,
 }
 
 /// What to do with the app that was frontmost before draw mode.
@@ -160,12 +178,16 @@ fn activate(app: &AppHandle) -> IpcResult<()> {
         hide_if_unneeded(app, &state.session());
         return Err(error);
     }
+    if state.settings().lock_while_drawing {
+        lock_interaction(app);
+    }
     Ok(())
 }
 
 /// Best effort: each step logs its own failure so the rest still runs.
 fn deactivate(app: &AppHandle, focus: FocusReturn) {
     let state = app.state::<AppState>();
+    platform::set_interaction_lock(app, None, |_| {});
     if let Err(error) = overlay::make_click_through(app) {
         log::error!("Leaving draw mode left an overlay taking input: {error}");
     }
@@ -175,6 +197,95 @@ fn deactivate(app: &AppHandle, focus: FocusReturn) {
     let previous = state.take_focus();
     if let (Some(previous), FocusReturn::Restore) = (previous, focus) {
         platform::restore_focus(app, previous);
+    }
+}
+
+/// Marks that macOS has shown its Accessibility dialog once, so later
+/// launches do not interrupt draw mode for it again.
+const LOCK_PROMPT_MARKER: &str = "accessibility-prompted";
+/// Overlays created for this activation need a moment before they listen.
+const NOTICE_DELAY: Duration = Duration::from_millis(700);
+/// The permission notice is shown once per launch, not on every activation.
+static PERMISSION_NOTICE_SHOWN: AtomicBool = AtomicBool::new(false);
+
+fn lock_prompt_marker(app: &AppHandle) -> Option<PathBuf> {
+    let state = app.state::<AppState>();
+    Some(state.settings_path.parent()?.join(LOCK_PROMPT_MARKER))
+}
+
+/// The settings folder may not exist yet when nothing has been saved.
+fn remember_prompt(marker: PathBuf) -> std::io::Result<()> {
+    if let Some(folder) = marker.parent() {
+        std::fs::create_dir_all(folder)?;
+    }
+    std::fs::write(marker, b"")
+}
+
+fn leave_draw_mode(app: AppHandle, focus: FocusReturn) {
+    dispatch("Leaving draw mode", async move {
+        let build = |_: &Session| SessionPatch::active(false);
+        let result = update_session_with(&app, build, focus).await;
+        if result.is_err() {
+            tray::resync(&app);
+        }
+        result.map(drop)
+    });
+}
+
+/// Holds the keyboard for draw mode. When that is not possible the overlays
+/// say so, because the user asked for a lock that is not in force.
+fn lock_interaction(app: &AppHandle) {
+    let marker = lock_prompt_marker(app);
+    let exit_app = app.clone();
+    let config = LockConfig {
+        exit_shortcut: app
+            .state::<ShortcutRegistry>()
+            .wanted_for(ShortcutAction::ToggleDraw),
+        on_exit: Arc::new(move || leave_draw_mode(exit_app.clone(), FocusReturn::Restore)),
+        may_prompt: marker.as_ref().is_some_and(|path| !path.exists()),
+    };
+    let notify = app.clone();
+    platform::set_interaction_lock(app, Some(config), move |outcome| match outcome {
+        LockOutcome::Changed => {}
+        // macOS is showing its permission dialog underneath the overlay,
+        // which would take every click. Step out of draw mode so the dialog
+        // can be answered. This happens once; afterwards a notice is shown.
+        LockOutcome::PermissionPrompted => {
+            log::info!("Leaving draw mode so the Accessibility dialog can be used.");
+            if let Some(Err(error)) = marker.map(remember_prompt) {
+                log::warn!("The permission prompt could not be remembered: {error}");
+            }
+            leave_draw_mode(notify, FocusReturn::Keep);
+        }
+        LockOutcome::NeedsPermission => {
+            log::warn!("The keyboard lock needs the Accessibility permission.");
+            if !PERMISSION_NOTICE_SHOWN.swap(true, Ordering::SeqCst) {
+                send_notice(notify, OverlayCommand::LockPermission);
+            }
+        }
+        LockOutcome::Failed => {
+            log::error!("The keyboard lock could not be started.");
+            send_notice(notify, OverlayCommand::LockFailed);
+        }
+    });
+}
+
+fn send_notice(app: AppHandle, command: OverlayCommand) {
+    let spawned = std::thread::Builder::new()
+        .name("lock-notice".into())
+        .spawn(move || {
+            std::thread::sleep(NOTICE_DELAY);
+            for window in overlay::overlay_windows(&app) {
+                if let Err(error) = app.emit_to(window.label(), OVERLAY_COMMAND, command) {
+                    log::error!(
+                        "The lock notice could not reach {}: {error}",
+                        window.label()
+                    );
+                }
+            }
+        });
+    if let Err(error) = spawned {
+        log::error!("The lock notice could not be sent: {error}");
     }
 }
 
@@ -221,5 +332,9 @@ mod tests {
     fn overlay_command_matches_the_contract() {
         let json = serde_json::to_value(OverlayCommand::Clear).unwrap();
         assert_eq!(json, serde_json::json!({"type": "clear"}));
+        let json = serde_json::to_value(OverlayCommand::LockPermission).unwrap();
+        assert_eq!(json, serde_json::json!({"type": "lock-permission"}));
+        let json = serde_json::to_value(OverlayCommand::LockFailed).unwrap();
+        assert_eq!(json, serde_json::json!({"type": "lock-failed"}));
     }
 }

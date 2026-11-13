@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   bridge,
   type Session,
@@ -7,6 +7,12 @@ import {
 } from "../bridge";
 import type { UiAction } from "./actions";
 import { sessionPatchFor } from "./sessionPatch";
+import {
+  loadToolColors,
+  rememberColor,
+  saveToolColors,
+  switchTool,
+} from "./toolColors";
 import type { DocumentActions } from "./useDrawingDocument";
 
 interface ActionDeps {
@@ -24,6 +30,15 @@ export function useOverlayActions(
 ): (action: UiAction) => void {
   const { session, settings, patchSession, documentActions, capture, onError } =
     deps;
+
+  // On launch the current tool gets back the colour it had last time.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    const color = loadToolColors()[session.tool];
+    if (color && color !== session.color) patchSession({ color });
+  }, [session.tool, session.color, patchSession]);
 
   return useCallback(
     (action: UiAction) => {
@@ -48,7 +63,24 @@ export function useOverlayActions(
           return;
       }
       const patch = sessionPatchFor(action, session, settings);
-      if (patch) patchSession(patch);
+      if (!patch) return;
+      // Each tool keeps the colour it was last used with.
+      if (action.type === "tool") {
+        const next = switchTool(
+          loadToolColors(),
+          session.tool,
+          action.tool,
+          session.color,
+        );
+        saveToolColors(next.colors);
+        patchSession({ ...patch, color: next.color });
+        return;
+      }
+      if (patch.color !== undefined)
+        saveToolColors(
+          rememberColor(loadToolColors(), session.tool, patch.color),
+        );
+      patchSession(patch);
     },
     [session, settings, patchSession, documentActions, capture, onError],
   );

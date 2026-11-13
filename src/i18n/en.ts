@@ -19,6 +19,16 @@ export const en = {
   "toolbar.label": "Drawing tools",
   "toolbar.move": "Move toolbar",
   "toolbar.color": "Colour {index}",
+  "toolbar.moreColors": "More colours",
+  "color.picker": "Colour picker",
+  "color.wheel": "Colour wheel: drag to choose hue and saturation",
+  "color.brightness": "Brightness",
+  "color.code": "Colour code (hex or RGB)",
+  "color.favorite": "Add to favourites",
+  "color.unfavorite": "Remove from favourites",
+  "color.favorites": "Favourites",
+  "color.noFavorites": "No favourites yet. Press the star to keep a colour.",
+  "color.useFavorite": "Use {color}",
   "toolbar.thinner": "Thinner",
   "toolbar.thicker": "Thicker",
   "toolbar.width": "Width {width}",
@@ -38,6 +48,10 @@ export const en = {
 
   "toast.saved": "Saved {path} to Pictures/ratelpen",
   "toast.savedNoPath": "Screenshot saved",
+  "toast.lockPermission":
+    "To block app switching while drawing, allow ratelpen under System Settings › Privacy & Security › Accessibility, then turn draw mode on again.",
+  "toast.lockFailed":
+    "The keyboard could not be locked; other apps' shortcuts still work.",
   "toast.copied": "Copied to clipboard",
   "error.capturePermission":
     "Screen recording is not allowed. Allow ratelpen under Screen Recording in System Settings, then try again.",
@@ -91,6 +105,8 @@ export const en = {
 
   "settings.general": "General",
   "settings.clearOnExit": "Clear drawings when leaving draw mode",
+  "settings.lockWhileDrawing":
+    "Lock the keyboard while drawing: no app switching, Mission Control or other shortcuts (macOS, needs the Accessibility permission)",
   "settings.launchAtLogin": "Open ratelpen at login",
 
   "settings.keys": "Drawing shortcuts",

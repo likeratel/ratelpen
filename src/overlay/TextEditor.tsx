@@ -17,6 +17,8 @@ export interface TextDraft {
   readonly width: number;
   readonly fade: boolean;
   readonly fontSize: number;
+  /** Id of the text being edited; absent for new text. */
+  readonly editingId?: string;
 }
 
 interface TextEditorProps {
@@ -42,12 +44,24 @@ export function TextEditor({
 }: TextEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
+  // Editing starts with Space still held (Space + double-click); its key
+  // repeat must not type spaces until the key has been released once.
+  const spaceStillHeld = useRef(draft.editingId !== undefined);
+
   useEffect(() => {
-    ref.current?.focus();
+    const element = ref.current;
+    if (!element) return;
+    element.focus();
+    element.setSelectionRange(element.value.length, element.value.length);
   }, []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     event.stopPropagation();
+    if (event.code === "Space" && event.repeat && spaceStillHeld.current) {
+      event.preventDefault();
+      return;
+    }
+    spaceStillHeld.current = false;
     if (isComposing(event)) return;
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -76,6 +90,9 @@ export function TextEditor({
       spellCheck={false}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={handleKeyDown}
+      onKeyUp={() => {
+        spaceStillHeld.current = false;
+      }}
       onBlur={onCommit}
       style={{
         left: draft.at.x,

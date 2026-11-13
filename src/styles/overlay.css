@@ -248,3 +248,209 @@
 .toast-error {
   background: rgba(150, 28, 24, 0.96);
 }
+
+/* Where the screen was tapped: a filled dot that bursts into two rings.
+   Drawn in the current colour with a dark and a light edge so it shows on
+   any background. */
+.tap-ripple {
+  position: fixed;
+  width: 96px;
+  height: 96px;
+  margin: -48px 0 0 -48px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tap-ripple::before,
+.tap-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.tap-ripple::before {
+  background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  animation: tap-dot 600ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.tap-ripple::after {
+  border: 6px solid currentColor;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  animation: tap-ring 600ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes tap-dot {
+  from {
+    opacity: 0.75;
+    transform: scale(0.18);
+  }
+  45% {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes tap-ring {
+  from {
+    opacity: 1;
+    transform: scale(0.2);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tap-ripple::before {
+    animation-name: tap-fade;
+    transform: scale(0.4);
+  }
+
+  .tap-ripple::after {
+    animation-name: tap-fade;
+    transform: scale(0.7);
+  }
+
+  @keyframes tap-fade {
+    from {
+      opacity: 0.9;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* Colour picker: a popover anchored to its toolbar button. */
+.color-anchor {
+  position: relative;
+  display: flex;
+}
+
+.color-picker {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 216px;
+  padding: 14px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 16px;
+  background: rgba(28, 28, 30, 0.96);
+  color: var(--chrome-fg);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+.color-anchor.opens-above .color-picker {
+  bottom: calc(100% + 12px);
+}
+
+.color-anchor.opens-below .color-picker {
+  top: calc(100% + 12px);
+}
+
+.color-wheel {
+  position: relative;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.color-wheel canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.color-wheel-marker {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font-size: 12px;
+}
+
+.color-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.color-preview {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.color-code {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.color-code[aria-invalid="true"] {
+  border-color: #ff453a;
+}
+
+.color-rgb,
+.color-empty,
+.color-heading {
+  width: 100%;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.color-heading {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.color-favorites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}

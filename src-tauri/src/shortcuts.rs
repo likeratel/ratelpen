@@ -42,6 +42,15 @@ impl ShortcutRegistry {
             .map(|(action, _)| *action)
     }
 
+    /// The shortcut the settings ask for, registered or not.
+    pub fn wanted_for(&self, action: ShortcutAction) -> Option<Shortcut> {
+        self.lock()
+            .wanted
+            .iter()
+            .find(|(bound, _)| *bound == action)
+            .map(|(_, shortcut)| *shortcut)
+    }
+
     /// Actions whose stored shortcut is not registered.
     pub fn unavailable(&self) -> Vec<ShortcutAction> {
         let held = self.lock();

@@ -10,6 +10,8 @@ use objc2_app_kit::{
 };
 use tauri::{AppHandle, WebviewWindow};
 
+use super::{macos_lock, LockConfig};
+
 /// `kCGMainMenuWindowLevel` (24) and `kCGPopUpMenuWindowLevel` (101). The
 /// overlay sits just below pop-up menus so the menu bar extra's menu still
 /// opens above it, while covering the menu bar, Dock and status items.
@@ -101,4 +103,54 @@ pub fn ensure_screen_capture_permission() -> bool {
         CGRequestScreenCaptureAccess();
     }
     false
+}
+
+/// Result of asking for the interaction lock.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LockOutcome {
+    Changed,
+    /// macOS has just put up its dialog asking for the Accessibility
+    /// permission.
+    PermissionPrompted,
+    /// The user has not allowed ratelpen under Accessibility yet.
+    NeedsPermission,
+    Failed,
+}
+
+/// With a config: holds the keyboard so that every key press and trackpad
+/// gesture stays inside ratelpen. With `None`: gives it back.
+/// `on_result` runs on the main thread.
+pub fn set_interaction_lock(
+    app: &AppHandle,
+    config: Option<LockConfig>,
+    on_result: impl FnOnce(LockOutcome) + Send + 'static,
+) {
+    let scheduled = app.run_on_main_thread(move || {
+        let Some(config) = config else {
+            macos_lock::remove();
+            on_result(LockOutcome::Changed);
+            return;
+        };
+        if macos_lock::is_trusted(false) {
+            let exit = config
+                .exit_shortcut
+                .as_ref()
+                .and_then(macos_lock::KeyChord::from_shortcut);
+            let installed = macos_lock::install(exit, config.on_exit);
+            on_result(if installed {
+                LockOutcome::Changed
+            } else {
+                LockOutcome::Failed
+            });
+        } else if config.may_prompt {
+            // Asks macOS to show its dialog; the answer applies next time.
+            macos_lock::is_trusted(true);
+            on_result(LockOutcome::PermissionPrompted);
+        } else {
+            on_result(LockOutcome::NeedsPermission);
+        }
+    });
+    if let Err(error) = scheduled {
+        log::error!("Could not schedule the interaction lock change: {error}");
+    }
 }

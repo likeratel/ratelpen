@@ -72,6 +72,7 @@ export const settingsSchema = z.object({
     .max(SPOTLIGHT_RADIUS_MAX),
   clearOnExit: z.boolean(),
   launchAtLogin: z.boolean(),
+  lockWhileDrawing: z.boolean(),
 });
 
 export const bootstrapSchema = z.object({
@@ -90,7 +91,9 @@ export const captureResultSchema = z.object({
   path: z.string().nullable(),
 });
 
-export const overlayCommandSchema = z.object({ type: z.literal("clear") });
+export const overlayCommandSchema = z.object({
+  type: z.enum(["clear", "lock-permission", "lock-failed"]),
+});
 
 export const cursorSchema = z
   .object({ x: z.number(), y: z.number() })
@@ -134,10 +137,11 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultWidth: 4,
   fadeSeconds: 5,
   fadeByDefault: false,
-  spotlightStyle: "halo",
+  spotlightStyle: "focus",
   spotlightRadius: 60,
   clearOnExit: true,
   launchAtLogin: false,
+  lockWhileDrawing: true,
 };
 
 export function sessionFromSettings(
