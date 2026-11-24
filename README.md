@@ -137,14 +137,22 @@ Open **Settings…** from the menu bar icon or the gear on the toolbar.
 
 ## Install
 
-No installer is published yet. Build it from source:
+Requires macOS 12 or later on Apple Silicon or Intel. No Windows installer is published.
+
+1. Download the latest `RatelPen_<version>_universal.dmg` from the [Releases page](https://github.com/likeratel/ratelpen/releases/latest). Each release lists the file's SHA-256; check it with `shasum -a 256 <file>.dmg`.
+2. Open the DMG and drag **RatelPen** to **Applications**. The bundle is capitalised so that Spotlight finds it when you type `pen`.
+3. Open it from Applications. The app is Developer ID signed and notarized, so macOS opens it without a security override. It runs in the menu bar only, with no Dock icon.
+
+The Intel half of the universal build has not been run on an Intel Mac; see [Limits](#limits).
+
+To build from source instead:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm tauri build
 ```
 
-The app is written to `src-tauri/target/release/bundle/`. Requires macOS 12 or later; a locally built app is not notarized.
+The app is written to `src-tauri/target/release/bundle/`. A locally built app is not notarized.
 
 ## Permissions (macOS)
 
@@ -177,6 +185,7 @@ The app is written to `src-tauri/target/release/bundle/`. Requires macOS 12 or l
 - Pressure from a tablet. A trackpad's pressure is not available to the app at all.
 - Whether the keyboard lock also stops trackpad gestures (swiping to Mission Control or another Space), and whether the input source can be switched while it is on.
 - The Screen Recording permission prompt in a signed build.
+- The Intel half of the universal release build. It compiles in CI but has not been run on an Intel Mac.
 
 **Known behaviour**
 

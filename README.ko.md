@@ -137,14 +137,22 @@ ratelpen은 발표, 화면 공유, 녹화 중에 화면 위에 바로 그리는 
 
 ## 설치
 
-아직 설치 파일을 배포하지 않습니다. 소스에서 빌드하세요.
+Apple Silicon 또는 Intel Mac의 macOS 12 이상이 필요합니다. Windows 설치 파일은 배포하지 않습니다.
+
+1. [Releases 페이지](https://github.com/likeratel/ratelpen/releases/latest)에서 최신 `RatelPen_<version>_universal.dmg`를 내려받습니다. 각 릴리스에 파일의 SHA-256이 적혀 있으며 `shasum -a 256 <file>.dmg`로 확인할 수 있습니다.
+2. DMG를 열고 **RatelPen**을 **Applications**로 끌어다 놓습니다. Spotlight에서 `pen`만 입력해도 찾을 수 있도록 번들 이름에 대문자를 넣었습니다.
+3. Applications에서 실행합니다. Developer ID로 서명하고 공증한 앱이라 보안 예외 없이 열립니다. Dock 아이콘 없이 메뉴 막대에서만 동작합니다.
+
+유니버설 빌드의 Intel 쪽은 Intel Mac에서 실행해 보지 못했습니다. [한계](#한계)를 참고하세요.
+
+소스에서 직접 빌드하려면:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm tauri build
 ```
 
-앱은 `src-tauri/target/release/bundle/`에 만들어집니다. macOS 12 이상이 필요하며, 직접 빌드한 앱은 공증되지 않습니다.
+앱은 `src-tauri/target/release/bundle/`에 만들어집니다. 직접 빌드한 앱은 공증되지 않습니다.
 
 ## 권한 (macOS)
 
@@ -177,6 +185,7 @@ pnpm tauri build
 - 태블릿 필압. 트랙패드의 압력은 앱이 아예 받을 수 없습니다.
 - 키보드 잠금이 트랙패드 제스처(쓸어서 Mission Control이나 다른 Space로 이동)까지 막는지, 잠금 중에 입력 소스를 바꿀 수 있는지.
 - 서명된 빌드의 화면 기록 권한 요청.
+- 유니버설 릴리스 빌드의 Intel 쪽. CI에서 컴파일되지만 Intel Mac에서 실행해 보지 못했습니다.
 
 **알려진 동작**
 
